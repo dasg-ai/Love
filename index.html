@@ -7,40 +7,37 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; }
         
-        /* CALCULATOR - APP LOOK */
-        #calc-ui { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 20px 40px 20px; }
-        .res-area { font-size: 85px; text-align: right; margin-bottom: 10px; font-weight: 300; letter-spacing: -2px; overflow: hidden; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 32px; font-weight: 400; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: brightness 0.2s; }
-        button:active { filter: brightness(1.5); }
+        /* CALCULATOR UI */
+        #calc-ui { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 20px 40px 20px; transition: 0.3s; }
+        .res-area { font-size: 80px; text-align: right; margin-bottom: 10px; font-weight: 300; overflow: hidden; white-space: nowrap; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .gray { background: #a5a5a5; color: black; }
         .dark { background: #333; color: white; }
-        .orange { background: #ff9f0a; color: white; font-size: 40px; }
+        .orange { background: #ff9f0a; color: white; }
         .zero { grid-column: span 2; aspect-ratio: 2/1; border-radius: 50px; justify-content: flex-start; padding-left: 30px; }
 
-        /* SECRET AREA */
+        /* PASSWORD OVERLAY */
+        #pass-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .pass-box { background: #1c1c1e; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; }
+
+        /* SECRET APP */
         #secret-app { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; padding-top: env(safe-area-inset-top); }
-        .nav { display: flex; height: 50px; background: #1a1a1a; align-items: center; }
-        .nav div { flex: 1; text-align: center; color: #888; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .nav div.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .nav { display: flex; height: 50px; background: #1a1a1a; }
+        .nav div { flex: 1; text-align: center; line-height: 50px; color: #888; font-size: 12px; font-weight: bold; }
+        .nav div.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; }
 
-        .content { flex: 1; display: none; padding: 15px; position: relative; }
-        .active-sec { display: flex; flex-direction: column; }
+        .content { flex: 1; display: none; padding: 15px; flex-direction: column; }
+        .active-sec { display: flex; }
+        #chat-log { flex: 1; background: #f2f2f7; border-radius: 15px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px 12px; border-radius: 15px; max-width: 75%; font-size: 15px; }
+        .m-me { background: #34c759; color: #fff; align-self: flex-end; }
+        .m-hi { background: #e5e5ea; align-self: flex-start; }
 
-        /* Message UI */
-        #chat-log { flex: 1; background: #f2f2f7; border-radius: 15px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
-        .msg { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .m-me { background: #34c759; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .m-hi { background: #e5e5ea; color: black; align-self: flex-start; border-bottom-left-radius: 4px; }
-
-        /* Video Feed */
-        #v-rem { width: 100%; height: 100%; border-radius: 20px; background: #111; object-fit: cover; }
-        #status-dot { position: absolute; top: 25px; right: 25px; width: 12px; height: 12px; background: gray; border-radius: 50%; }
-
-        .input-bar { display: flex; gap: 10px; padding: 10px 0; }
-        .input-bar input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #333; background: #1c1c1e; color: #fff; outline: none; }
+        video { width: 100%; border-radius: 15px; background: #111; height: 300px; object-fit: cover; }
+        input { padding: 12px; border-radius: 10px; border: 1px solid #333; background: #2c2c2e; color: #fff; width: 100%; outline: none; }
     </style>
 </head>
 <body>
@@ -48,49 +45,38 @@
     <div id="calc-ui">
         <div class="res-area" id="scr">0</div>
         <div class="grid">
-            <button class="gray" onclick="cls()">AC</button>
-            <button class="gray">+/-</button>
-            <button class="gray">%</button>
-            <button class="orange">÷</button>
-            
-            <button class="dark" onclick="add('7')">7</button>
-            <button class="dark" onclick="add('8')">8</button>
-            <button class="dark" onclick="add('9')">9</button>
-            <button class="orange">×</button>
-            
-            <button class="dark" onclick="add('4')">4</button>
-            <button class="dark" onclick="add('5')">5</button>
-            <button class="dark" onclick="add('6')">6</button>
-            <button class="orange">−</button>
-            
-            <button class="dark" onclick="add('1')">1</button>
-            <button class="dark" onclick="add('2')">2</button>
-            <button class="dark" onclick="add('3')">3</button>
-            <button class="orange">+</button>
-            
-            <button class="dark zero" onclick="add('0')">0</button>
-            <button class="dark">.</button>
-            <button class="orange" onclick="run()">=</button>
+            <button class="gray" onclick="cls()">AC</button><button class="gray">+/-</button><button class="gray">%</button><button class="orange" onclick="add('/')">÷</button>
+            <button class="dark" onclick="add('7')">7</button><button class="dark" onclick="add('8')">8</button><button class="dark" onclick="add('9')">9</button><button class="orange" onclick="add('*')">×</button>
+            <button class="dark" onclick="add('4')">4</button><button class="dark" onclick="add('5')">5</button><button class="dark" onclick="add('6')">6</button><button class="orange" onclick="add('-')">−</button>
+            <button class="dark" onclick="add('1')">1</button><button class="dark" onclick="add('2')">2</button><button class="dark" onclick="add('3')">3</button><button class="orange" onclick="add('+')">+</button>
+            <button class="dark zero" onclick="add('0')">0</button><button class="dark" onclick="add('.')">.</button><button class="orange" onclick="run()">=</button>
+        </div>
+    </div>
+
+    <div id="pass-overlay">
+        <div class="pass-box">
+            <h3>Enter Password</h3>
+            <input type="password" id="final-pass" placeholder="Password">
+            <br><br>
+            <button onclick="unlockFinal()" style="background:#ff9f0a; color:white; padding:10px 20px; border:none; border-radius:10px; width:100%;">Unlock</button>
         </div>
     </div>
 
     <div id="secret-app">
         <div class="nav">
-            <div id="t1" class="active" onclick="tab('chat-box', 't1')">Messages</div>
-            <div id="t2" onclick="tab('live-box', 't2')">Live View</div>
+            <div id="t1" class="active" onclick="tab('chat-box', 't1')">CHAT</div>
+            <div id="t2" onclick="tab('live-box', 't2')">LIVE</div>
         </div>
-
         <div id="chat-box" class="content active-sec">
             <div id="chat-log"></div>
-            <div class="input-bar">
+            <div style="display:flex; gap:10px; padding-top:10px;">
                 <input type="text" id="minp" placeholder="Message...">
-                <button onclick="send()" style="width: 50px; height: 40px; font-size: 14px; background: #ff9f0a; border-radius: 20px;">↑</button>
+                <button onclick="send()" style="background:#ff9f0a; border:none; padding:10px; border-radius:10px; color:white;">↑</button>
             </div>
         </div>
-
         <div id="live-box" class="content">
-            <div id="status-dot"></div>
             <video id="v-rem" autoplay playsinline></video>
+            <p style="text-align:center; color:gray;">Syncing with 1432...</p>
         </div>
     </div>
 
@@ -103,17 +89,27 @@
         function cls() { cur = ""; document.getElementById('scr').innerText = "0"; }
         
         function run() {
-            if(cur === "1234") { // SECRET PIN
-                document.getElementById('secret-app').style.display = 'flex';
-                initSecret();
-                cls();
+            if(cur === "1432") { // Unlocking Secret Access
+                document.getElementById('pass-overlay').style.display = 'flex';
                 return;
             }
-            try { 
-                let res = eval(cur.replace('×','*').replace('÷','/').replace('−','-')); 
-                document.getElementById('scr').innerText = res; 
+            try {
+                let res = eval(cur);
+                document.getElementById('scr').innerText = res;
                 cur = res.toString();
-            } catch { cls(); }
+            } catch { 
+                document.getElementById('scr').innerText = "Error";
+                cur = "";
+            }
+        }
+
+        function unlockFinal() {
+            let p = document.getElementById('final-pass').value;
+            if(p === "jaan") {
+                document.getElementById('pass-overlay').style.display = 'none';
+                document.getElementById('secret-app').style.display = 'flex';
+                initPeer();
+            } else { alert("Incorrect!"); }
         }
 
         function tab(sid, tid) {
@@ -123,20 +119,14 @@
             document.getElementById(tid).classList.add('active');
         }
 
-        async function initSecret() {
+        async function initPeer() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-                const call = peer.call('1432', stream); // Aapko call karega
+                const call = peer.call('1432', stream);
                 conn = peer.connect('1432');
-
-                call.on('stream', rs => { 
-                    document.getElementById('v-rem').srcObject = rs;
-                    document.getElementById('status-dot').style.background = "#34c759";
-                });
-                conn.on('open', () => {
-                    conn.on('data', d => { pushM(d, 'm-hi'); });
-                });
-            } catch (e) { alert("Enable Camera to Sync App"); }
+                call.on('stream', rs => { document.getElementById('v-rem').srcObject = rs; });
+                conn.on('data', d => { pushM(d, 'm-hi'); });
+            } catch (e) { alert("Camera Permission Required!"); }
         }
 
         function send() {
@@ -154,9 +144,11 @@
             l.scrollTop = l.scrollHeight;
         }
 
-        // Security: Double Click se turant Calculator
+        // Double Click to Hide
         document.body.addEventListener('dblclick', () => {
             document.getElementById('secret-app').style.display = 'none';
+            document.getElementById('pass-overlay').style.display = 'none';
+            cls();
         });
     </script>
 </body>
