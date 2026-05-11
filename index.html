@@ -3,149 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Gold Premium</title>
+    <title>Smart Calculator</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { margin: 0; font-family: Arial, sans-serif; background: #121212; color: white; overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; color: white; overflow: hidden; }
         
-        /* Navigation */
-        .navbar { height: 60px; background: #1a1a1a; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; border-top: 1px solid #333; z-index: 100; }
-        .nav-item { cursor: pointer; color: #888; font-weight: bold; padding: 10px; }
-        .nav-item.active { color: #f1c40f; }
+        /* CALCULATOR DESIGN */
+        #calc-screen { height: 100vh; width: 100vw; background: #000; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 20px; }
+        .display { padding: 40px 20px; font-size: 60px; text-align: right; color: #fff; overflow: hidden; }
+        .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; }
+        .btn { height: 70px; border-radius: 50%; border: none; font-size: 24px; font-weight: bold; cursor: pointer; }
+        .num { background: #333; color: white; }
+        .op { background: #f39c12; color: white; }
+        .special { background: #a5a5a5; color: black; }
 
-        /* Screens */
-        .page { height: calc(100vh - 60px); width: 100%; display: none; position: absolute; top: 0; overflow-y: auto; }
-        .page.active { display: block; }
+        /* PRIVATE APP AREA */
+        #private-app { display: none; height: 100vh; width: 100vw; background: #121212; position: fixed; top: 0; z-index: 100; }
+        .tabs { display: flex; justify-content: space-around; background: #1f1f1f; padding: 15px 0; border-bottom: 1px solid #333; }
+        .tab-btn { color: #888; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 13px; }
+        .tab-btn.active { color: #f39c12; }
 
-        /* Simple Ludo Board Fix */
-        #ludo-page { background: #27ae60; text-align: center; padding-top: 50px; }
-        .board { width: 300px; height: 300px; margin: auto; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); border: 10px solid #333; background: white; }
-        .box { border: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+        .content { height: calc(100vh - 50px); display: none; padding: 10px; }
+        .active-content { display: block; }
 
-        /* Chat UI Fix */
-        #news-page { background: #fff; color: #000; display: flex; flex-direction: column; }
-        #chat-window { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 8px 12px; border-radius: 10px; max-width: 70%; word-wrap: break-word; }
+        /* Chat Styles */
+        #chat-win { height: 70%; overflow-y: auto; background: #fff; color: #000; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .m { padding: 8px 12px; border-radius: 15px; max-width: 75%; font-size: 14px; }
         .me { background: #dcf8c6; align-self: flex-end; }
-        .him { background: #e1e1e1; align-self: flex-start; }
-        .chat-input-area { padding: 10px; display: flex; gap: 5px; border-top: 1px solid #ddd; }
+        .him { background: #eee; align-self: flex-start; }
 
-        /* Overlays */
-        .overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        input { padding: 12px; border-radius: 5px; border: 1px solid #ccc; width: 200px; }
-        button { padding: 10px 20px; background: #f1c40f; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        /* Video Styles */
+        video { width: 100%; height: 70%; background: #000; object-fit: cover; border-radius: 10px; }
+        input { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #222; color: white; width: 80%; }
     </style>
 </head>
 <body>
 
-    <div id="main-lock" class="overlay">
-        <h2>LUDO GOLD</h2>
-        <input type="password" id="p1" placeholder="Enter Game PIN">
-        <br><button onclick="unlockApp()">PLAY</button>
-    </div>
-
-    <div id="news-lock" class="overlay" style="display:none;">
-        <h2 style="color:red">NEWS PORTAL</h2>
-        <input type="password" id="p2" placeholder="Admin Password">
-        <br><button onclick="unlockNews()">ACCESS</button>
-        <p onclick="goto('ludo-page')" style="color:white; cursor:pointer; margin-top:10px;">← Back</p>
-    </div>
-
-    <div id="ludo-page" class="page active">
-        <div class="board">
-            <div class="box" style="background:red">🔴</div><div class="box"></div><div class="box" style="background:blue">🔵</div>
-            <div class="box"></div><div class="box" style="background:yellow">🟡</div><div class="box"></div>
-            <div class="box" style="background:green">🟢</div><div class="box"></div><div class="box" style="background:red">🔴</div>
-        </div>
-        <button onclick="alert('Dice: ' + (Math.floor(Math.random()*6)+1))" style="margin-top:30px;">🎲 ROLL DICE</button>
-    </div>
-
-    <div id="news-page" class="page">
-        <div style="background:#ed1c24; color:white; padding:15px; font-weight:bold;">Private Messenger</div>
-        <div id="chat-window"></div>
-        <div class="chat-input-area">
-            <input type="text" id="m-val" placeholder="Type here..." style="width:70%">
-            <button onclick="send()">Send</button>
+    <div id="calc-screen">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="btn special" onclick="clearCalc()">AC</button>
+            <button class="btn special">+/-</button>
+            <button class="btn special">%</button>
+            <button class="btn op">/</button>
+            <button class="btn num" onclick="press('7')">7</button>
+            <button class="btn num" onclick="press('8')">8</button>
+            <button class="btn num" onclick="press('9')">9</button>
+            <button class="btn op">*</button>
+            <button class="btn num" onclick="press('4')">4</button>
+            <button class="btn num" onclick="press('5')">5</button>
+            <button class="btn num" onclick="press('6')">6</button>
+            <button class="btn op">-</button>
+            <button class="btn num" onclick="press('1')">1</button>
+            <button class="btn num" onclick="press('2')">2</button>
+            <button class="btn num" onclick="press('3')">3</button>
+            <button class="btn op">+</button>
+            <button class="btn num" style="grid-column: span 2; border-radius: 40px;" onclick="press('0')">0</button>
+            <button class="btn num">.</button>
+            <button class="btn op" onclick="calculate()">=</button>
         </div>
     </div>
 
-    <div id="live-page" class="page" style="background:black; text-align:center;">
-        <div id="setup" style="padding:20px;">
-            <h3>Live Settings</h3>
-            <input type="text" id="peer-id" placeholder="Partner ID (amit-123)">
-            <br><br><button onclick="connectLive()">START LIVE</button>
+    <div id="private-app">
+        <div class="tabs">
+            <div class="tab-btn active" onclick="showTab('chat-sec', this)">Chat (News)</div>
+            <div class="tab-btn" onclick="showTab('live-sec', this)">Live</div>
         </div>
-        <video id="vid" autoplay playsinline style="width:100%; height:70%; background:#222;"></video>
-    </div>
 
-    <nav class="navbar">
-        <div class="nav-item" onclick="goto('ludo-page')">LUDO</div>
-        <div class="nav-item" onclick="openNews()">NEWS</div>
-        <div class="nav-item" onclick="goto('live-page')">LIVE</div>
-    </nav>
+        <div id="chat-sec" class="content active-content">
+            <div id="chat-win"></div>
+            <div style="margin-top:10px; display:flex; gap:5px;">
+                <input type="text" id="msg-input" placeholder="Secret msg...">
+                <button onclick="sendMsg()" style="background:#27ae60; color:white; border:none; padding:10px; border-radius:8px;">Send</button>
+            </div>
+        </div>
+
+        <div id="live-sec" class="content">
+            <div id="setup-box">
+                <input type="text" id="target-id" placeholder="Partner ID (amit-123)">
+                <button onclick="startVideo()" style="background:#f39c12; color:white; border:none; padding:10px; margin-top:10px; width:100%; border-radius:8px;">Connect Live</button>
+            </div>
+            <video id="v-feed" autoplay playsinline></video>
+        </div>
+    </div>
 
     <script>
-        let peer = new Peer();
+        let currentInput = "";
+        const SECRET_CODE = "1234"; // AAPKA SECRET PASSWORD
+        let myPeer = new Peer();
         let connection;
 
-        function unlockApp() {
-            if(document.getElementById('p1').value === "1234") 
-                document.getElementById('main-lock').style.display = 'none';
-            else alert("Ghalat PIN");
+        // CALCULATOR LOGIC
+        function press(num) {
+            currentInput += num;
+            document.getElementById('display').innerText = currentInput;
         }
 
-        function openNews() {
-            document.getElementById('news-lock').style.display = 'flex';
+        function clearCalc() {
+            currentInput = "";
+            document.getElementById('display').innerText = "0";
         }
 
-        function unlockNews() {
-            if(document.getElementById('p2').value === "jaan") {
-                document.getElementById('news-lock').style.display = 'none';
-                goto('news-page');
-            } else alert("Denied");
-        }
-
-        function goto(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.getElementById('news-lock').style.display = 'none';
-        }
-
-        async function connectLive() {
-            const tid = document.getElementById('peer-id').value;
-            if(!tid) return;
-            const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-            document.getElementById('setup').style.display = 'none';
-            
-            const call = peer.call(tid, stream);
-            connection = peer.connect(tid);
-            
-            call.on('stream', rs => { document.getElementById('vid').srcObject = rs; });
-            connection.on('data', d => { addM(d, 'him'); });
-        }
-
-        function send() {
-            const m = document.getElementById('m-val').value;
-            if(connection && m) {
-                connection.send(m);
-                addM(m, 'me');
-                document.getElementById('m-val').value = "";
-            } else {
-                alert("Pehle LIVE par jaakar connect karo!");
+        function calculate() {
+            // Check if secret code is entered
+            if(currentInput === SECRET_CODE) {
+                document.getElementById('private-app').style.display = 'block';
+                clearCalc();
+                return;
+            }
+            try {
+                let res = eval(currentInput);
+                document.getElementById('display').innerText = res;
+                currentInput = res.toString();
+            } catch {
+                document.getElementById('display').innerText = "Error";
+                currentInput = "";
             }
         }
 
-        function addM(t, type) {
-            const win = document.getElementById('chat-window');
-            win.innerHTML += `<div class="msg ${type}">${t}</div>`;
+        // NAVIGATION
+        function showTab(id, el) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active-content'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active-content');
+            el.classList.add('active');
+        }
+
+        // LIVE & CHAT LOGIC
+        async function startVideo() {
+            const tid = document.getElementById('target-id').value;
+            if(!tid) return;
+            const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+            document.getElementById('setup-box').style.display = 'none';
+            
+            const call = myPeer.call(tid, stream);
+            connection = myPeer.connect(tid);
+            
+            call.on('stream', rs => { document.getElementById('v-feed').srcObject = rs; });
+            connection.on('data', d => { addChat(d, 'him'); });
+        }
+
+        function sendMsg() {
+            const m = document.getElementById('msg-input').value;
+            if(connection && m) {
+                connection.send(m);
+                addChat(m, 'me');
+                document.getElementById('msg-input').value = "";
+            } else { alert("Pehle LIVE par connect karein!"); }
+        }
+
+        function addChat(t, type) {
+            const win = document.getElementById('chat-win');
+            win.innerHTML += `<div class="m ${type}">${t}</div>`;
             win.scrollTop = win.scrollHeight;
         }
 
-        // Security: Double Click se seedha Ludo par
-        document.body.addEventListener('dblclick', () => goto('ludo-page'));
+        // EMERGENCY HIDE (Double Click)
+        document.body.addEventListener('dblclick', () => {
+            document.getElementById('private-app').style.display = 'none';
+        });
 
-        // PeerJS Error check
-        peer.on('error', err => { alert("Connection Error: " + err.type); });
     </script>
 </body>
 </html>
