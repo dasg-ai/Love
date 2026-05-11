@@ -4,151 +4,154 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Calculator</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+    
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* Pehle wala CSS base rahega */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; }
         
-        /* CALCULATOR UI */
-        #calc-ui { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 20px 40px 20px; transition: 0.3s; }
-        .res-area { font-size: 80px; text-align: right; margin-bottom: 10px; font-weight: 300; overflow: hidden; white-space: nowrap; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .gray { background: #a5a5a5; color: black; }
-        .dark { background: #333; color: white; }
-        .orange { background: #ff9f0a; color: white; }
-        .zero { grid-column: span 2; aspect-ratio: 2/1; border-radius: 50px; justify-content: flex-start; padding-left: 30px; }
+        .header { display: flex; justify-content: space-between; padding: 10px 20px; align-items: center; height: 60px; position: fixed; top: 0; width: 100%; z-index: 10; }
+        .status { font-size: 13px; font-weight: 500; color: #ff3b30; }
+        .bell-icon { font-size: 22px; cursor: pointer; filter: grayscale(1); }
 
-        /* PASSWORD OVERLAY */
-        #pass-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .pass-box { background: #1c1c1e; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; }
+        #calc-screen { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 20px 50px 20px; }
+        .display { font-size: 90px; text-align: right; margin-bottom: 15px; font-weight: 300; letter-spacing: -2px; }
+        .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        button:active { filter: brightness(1.4); }
+        .gray { background: #a5a5a5; color: #000; }
+        .dark { background: #333; color: #fff; }
+        .orange { background: #ff9f0a; color: #fff; font-size: 40px; }
+        .zero { grid-column: span 2; aspect-ratio: 2/1; border-radius: 50px; justify-content: flex-start; padding-left: 32px; }
 
-        /* SECRET APP */
         #secret-app { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; padding-top: env(safe-area-inset-top); }
-        .nav { display: flex; height: 50px; background: #1a1a1a; }
-        .nav div { flex: 1; text-align: center; line-height: 50px; color: #888; font-size: 12px; font-weight: bold; }
-        .nav div.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; }
+        .tabs { display: flex; background: #1a1a1a; height: 55px; border-bottom: 1px solid #333; }
+        .tab { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; }
+        .tab.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; }
 
-        .content { flex: 1; display: none; padding: 15px; flex-direction: column; }
-        .active-sec { display: flex; }
-        #chat-log { flex: 1; background: #f2f2f7; border-radius: 15px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 8px 12px; border-radius: 15px; max-width: 75%; font-size: 15px; }
-        .m-me { background: #34c759; color: #fff; align-self: flex-end; }
-        .m-hi { background: #e5e5ea; align-self: flex-start; }
+        #chat-flow { flex: 1; background: #f2f2f7; border-radius: 20px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; color: #000; margin: 10px; }
+        .m { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 16px; line-height: 1.4; position: relative; }
+        .me { background: #34c759; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .him { background: #e5e5ea; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        /* IMAGE STYLE IN CHAT */
+        .chat-img { max-width: 100%; border-radius: 12px; margin-top: 5px; display: block; }
 
-        video { width: 100%; border-radius: 15px; background: #111; height: 300px; object-fit: cover; }
-        input { padding: 12px; border-radius: 10px; border: 1px solid #333; background: #2c2c2e; color: #fff; width: 100%; outline: none; }
+        .chat-input { display: flex; gap: 8px; padding: 15px; align-items: center; background: #000; }
+        .chat-input input { flex: 1; background: #1c1c1e; border: none; border-radius: 25px; padding: 12px 20px; color: #fff; font-size: 16px; }
+        
+        .attach-btn { color: #ff9f0a; font-size: 24px; cursor: pointer; padding: 0 5px; }
+        #file-input { display: none; }
+
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(15px); }
     </style>
 </head>
 <body>
 
-    <div id="calc-ui">
-        <div class="res-area" id="scr">0</div>
-        <div class="grid">
-            <button class="gray" onclick="cls()">AC</button><button class="gray">+/-</button><button class="gray">%</button><button class="orange" onclick="add('/')">÷</button>
-            <button class="dark" onclick="add('7')">7</button><button class="dark" onclick="add('8')">8</button><button class="dark" onclick="add('9')">9</button><button class="orange" onclick="add('*')">×</button>
-            <button class="dark" onclick="add('4')">4</button><button class="dark" onclick="add('5')">5</button><button class="dark" onclick="add('6')">6</button><button class="orange" onclick="add('-')">−</button>
-            <button class="dark" onclick="add('1')">1</button><button class="dark" onclick="add('2')">2</button><button class="dark" onclick="add('3')">3</button><button class="orange" onclick="add('+')">+</button>
-            <button class="dark zero" onclick="add('0')">0</button><button class="dark" onclick="add('.')">.</button><button class="orange" onclick="run()">=</button>
+    <div class="header">
+        <div id="dot" class="status">● Offline</div>
+        <div class="bell-icon" onclick="triggerBell()">🔔</div>
+    </div>
+
+    <div id="calc-screen">
+        <div class="display" id="scr">0</div>
+        <div class="btns">
+            <button class="gray" onclick="cls()">AC</button><button class="gray">+/-</button><button class="gray">%</button><button class="orange" onclick="op('/')">÷</button>
+            <button class="dark" onclick="num('7')">7</button><button class="dark" onclick="num('8')">8</button><button class="dark" onclick="num('9')">9</button><button class="orange" onclick="op('*')">×</button>
+            <button class="dark" onclick="num('4')">4</button><button class="dark" onclick="num('5')">5</button><button class="dark" onclick="num('6')">6</button><button class="orange" onclick="op('-')">−</button>
+            <button class="dark" onclick="num('1')">1</button><button class="dark" onclick="num('2')">2</button><button class="dark" onclick="num('3')">3</button><button class="orange" onclick="op('+')">+</button>
+            <button class="dark zero" onclick="num('0')">0</button><button class="dark">.</button><button class="orange" onclick="run()">=</button>
         </div>
     </div>
 
-    <div id="pass-overlay">
-        <div class="pass-box">
-            <h3>Enter Password</h3>
-            <input type="password" id="final-pass" placeholder="Password">
-            <br><br>
-            <button onclick="unlockFinal()" style="background:#ff9f0a; color:white; padding:10px 20px; border:none; border-radius:10px; width:100%;">Unlock</button>
+    <div id="overlay">
+        <div style="width: 80%; text-align: center;">
+            <h2 style="margin-bottom:20px">Private Access</h2>
+            <input type="password" id="p" style="background:#1c1c1e; border:1px solid #333; color:#fff; width:100%; padding:15px; border-radius:12px; font-size:18px; text-align:center;" placeholder="Enter PIN">
+            <button onclick="unlock()" style="background:#ff9f0a; color:#fff; width:100%; padding:15px; border-radius:12px; font-weight:bold; border:none; margin-top:20px;">Open</button>
         </div>
     </div>
 
     <div id="secret-app">
-        <div class="nav">
-            <div id="t1" class="active" onclick="tab('chat-box', 't1')">CHAT</div>
-            <div id="t2" onclick="tab('live-box', 't2')">LIVE</div>
+        <div class="tabs">
+            <div class="tab active">Messages</div>
+            <div class="tab">Live</div>
         </div>
-        <div id="chat-box" class="content active-sec">
-            <div id="chat-log"></div>
-            <div style="display:flex; gap:10px; padding-top:10px;">
-                <input type="text" id="minp" placeholder="Message...">
-                <button onclick="send()" style="background:#ff9f0a; border:none; padding:10px; border-radius:10px; color:white;">↑</button>
-            </div>
-        </div>
-        <div id="live-box" class="content">
-            <video id="v-rem" autoplay playsinline></video>
-            <p style="text-align:center; color:gray;">Syncing with 1432...</p>
+        
+        <div id="chat-flow"></div>
+
+        <div class="chat-input">
+            <label for="file-input" class="attach-btn">📎</label>
+            <input type="file" id="file-input" accept="image/*" onchange="sendPhoto(this)">
+            
+            <input type="text" id="m-in" placeholder="Write message...">
+            <button onclick="sendMsg()" style="background:#ff9f0a; border:none; border-radius:50%; width:40px; height:40px; color:#fff; font-weight:bold;">↑</button>
         </div>
     </div>
 
     <script>
         let cur = "";
-        let peer = new Peer('143'); // Unka ID
-        let conn;
+        function num(n) { cur += n; update(); }
+        function op(o) { cur += o; update(); }
+        function cls() { cur = ""; update("0"); }
+        function update(v) { document.getElementById('scr').innerText = v || cur; }
 
-        function add(n) { cur += n; document.getElementById('scr').innerText = cur; }
-        function cls() { cur = ""; document.getElementById('scr').innerText = "0"; }
-        
         function run() {
-            if(cur === "1432") { // Unlocking Secret Access
-                document.getElementById('pass-overlay').style.display = 'flex';
-                return;
-            }
-            try {
-                let res = eval(cur);
-                document.getElementById('scr').innerText = res;
-                cur = res.toString();
-            } catch { 
-                document.getElementById('scr').innerText = "Error";
-                cur = "";
-            }
+            if(cur === "1432") { document.getElementById('overlay').style.display = 'flex'; return; }
+            try { let res = eval(cur); cur = res.toString(); update(); } catch { cls(); }
         }
 
-        function unlockFinal() {
-            let p = document.getElementById('final-pass').value;
-            if(p === "jaan") {
-                document.getElementById('pass-overlay').style.display = 'none';
+        function unlock() {
+            if(document.getElementById('p').value === "jaan") {
+                document.getElementById('overlay').style.display = 'none';
                 document.getElementById('secret-app').style.display = 'flex';
-                initPeer();
-            } else { alert("Incorrect!"); }
+            } else { alert("Wrong!"); }
         }
 
-        function tab(sid, tid) {
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active-sec'));
-            document.querySelectorAll('.nav div').forEach(n => n.classList.remove('active'));
-            document.getElementById(sid).classList.add('active-sec');
-            document.getElementById(tid).classList.add('active');
+        function pushMessage(content, type, isImage = false) {
+            const flow = document.getElementById('chat-flow');
+            const div = document.createElement('div');
+            div.className = `m ${type}`;
+            
+            if(isImage) {
+                const img = document.createElement('img');
+                img.src = content;
+                img.className = 'chat-img';
+                div.appendChild(img);
+            } else {
+                div.innerText = content;
+            }
+            
+            flow.appendChild(div);
+            flow.scrollTop = flow.scrollHeight;
         }
 
-        async function initPeer() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-                const call = peer.call('1432', stream);
-                conn = peer.connect('1432');
-                call.on('stream', rs => { document.getElementById('v-rem').srcObject = rs; });
-                conn.on('data', d => { pushM(d, 'm-hi'); });
-            } catch (e) { alert("Camera Permission Required!"); }
-        }
-
-        function send() {
-            let m = document.getElementById('minp').value;
-            if(conn && m) {
-                conn.send(m);
-                pushM(m, 'm-me');
-                document.getElementById('minp').value = "";
+        function sendMsg() {
+            const inp = document.getElementById('m-in');
+            if(inp.value.trim()) {
+                pushMessage(inp.value, 'me');
+                inp.value = "";
+                // Firebase logic will go here
             }
         }
 
-        function pushM(t, cl) {
-            let l = document.getElementById('chat-log');
-            l.innerHTML += `<div class="msg ${cl}">${t}</div>`;
-            l.scrollTop = l.scrollHeight;
+        function sendPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    pushMessage(e.target.result, 'me', true);
+                    // Firebase storage upload will go here
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
-        // Double Click to Hide
         document.body.addEventListener('dblclick', () => {
             document.getElementById('secret-app').style.display = 'none';
-            document.getElementById('pass-overlay').style.display = 'none';
-            cls();
+            document.getElementById('overlay').style.display = 'none';
         });
     </script>
 </body>
