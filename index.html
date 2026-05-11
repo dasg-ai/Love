@@ -7,44 +7,47 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+        body { 
+            margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
         
-        /* HEADER */
-        .header { display: flex; justify-content: space-between; padding: 10px 20px; align-items: center; height: 50px; }
-        #status { font-size: 12px; color: #ff3b30; font-weight: bold; }
-        .bell { font-size: 22px; cursor: pointer; color: #555; }
+        /* HEADER AREA */
+        .header { display: flex; justify-content: space-between; padding: 15px 25px; align-items: center; height: 60px; }
+        #status { font-size: 13px; color: #ff3b30; font-weight: 600; }
+        .bell { font-size: 24px; cursor: pointer; color: #555; }
 
-        /* CALCULATOR MAIN AREA */
-        #calc-ui { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px 20px 30px 20px; }
-        .res { font-size: 80px; text-align: right; margin-bottom: 15px; font-weight: 300; overflow: hidden; white-space: nowrap; }
+        /* CALCULATOR DISPLAY */
+        #calc-main { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px 20px 20px 20px; }
+        .res { font-size: 85px; text-align: right; margin-bottom: 20px; font-weight: 300; letter-spacing: -2px; overflow: hidden; }
         
-        /* GRID FIX */
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
-        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; transition: 0.1s; }
-        button:active { filter: brightness(1.5); }
+        /* THE GRID - AB YEH KAHI NAHI JAYEGA */
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 400px; margin: 0 auto; }
+        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 400; }
+        button:active { filter: brightness(1.6); }
         
         .gray { background: #a5a5a5; color: #000; }
         .dark { background: #333; }
         .orange { background: #ff9f0a; }
         
-        /* Special Buttons */
-        .zero { grid-column: span 2; aspect-ratio: 2/1; border-radius: 50px; justify-content: flex-start; padding-left: 35px; }
+        /* Zero Button (Double Width) */
+        .zero { grid-column: span 2; aspect-ratio: 2.1/1; border-radius: 50px; justify-content: flex-start; padding-left: 35px; }
 
-        /* SECRET UI */
+        /* SECRET INTERFACE & OVERLAY */
         #secret-app { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
-        .tabs { display: flex; height: 55px; background: #1a1a1a; border-bottom: 1px solid #333; }
-        .tab { flex: 1; text-align: center; line-height: 55px; color: #888; font-size: 12px; font-weight: bold; }
-        .tab.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; }
-        .panel { flex: 1; display: none; flex-direction: column; padding: 15px; }
-        .active-p { display: flex; }
-        #chat-log { flex: 1; background: #f2f2f7; border-radius: 15px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 8px; }
-        .m { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 16px; }
-        .me { background: #34c759; color: #fff; align-self: flex-end; }
-        .him { background: #e5e5ea; align-self: flex-start; }
-        .chat-img { max-width: 100%; border-radius: 10px; }
-        .inp-bar { display: flex; gap: 10px; padding: 15px 0; align-items: center; }
-        #minp { flex: 1; padding: 12px; border-radius: 20px; border: none; background: #1c1c1e; color: #fff; }
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .tabs { display: flex; height: 60px; background: #1c1c1e; border-bottom: 1px solid #333; padding-top: env(safe-area-inset-top); }
+        .tab { flex: 1; text-align: center; line-height: 50px; color: #888; font-size: 12px; font-weight: bold; }
+        .tab.active { color: #ff9f0a; border-bottom: 3px solid #ff9f0a; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(15px); }
+        
+        /* CHAT UI */
+        #chat-area { flex: 1; display: none; flex-direction: column; padding: 15px; }
+        #chat-log { flex: 1; background: #f2f2f7; border-radius: 20px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 8px; }
+        .m { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 16px; line-height: 1.4; }
+        .me { background: #34c759; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .him { background: #e5e5ea; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-img { max-width: 100%; border-radius: 12px; margin-top: 5px; }
+        .active-panel { display: flex !important; }
     </style>
 </head>
 <body>
@@ -54,25 +57,29 @@
         <span class="bell" onclick="ring()">🔔</span>
     </div>
 
-    <div id="calc-ui">
+    <div id="calc-main">
         <div class="res" id="scr">0</div>
         <div class="grid">
             <button class="gray" onclick="cls()">AC</button>
             <button class="gray">+/-</button>
             <button class="gray">%</button>
             <button class="orange" onclick="add('/')">÷</button>
+
             <button class="dark" onclick="add('7')">7</button>
             <button class="dark" onclick="add('8')">8</button>
             <button class="dark" onclick="add('9')">9</button>
             <button class="orange" onclick="add('*')">×</button>
+
             <button class="dark" onclick="add('4')">4</button>
             <button class="dark" onclick="add('5')">5</button>
             <button class="dark" onclick="add('6')">6</button>
             <button class="orange" onclick="add('-')">−</button>
+
             <button class="dark" onclick="add('1')">1</button>
             <button class="dark" onclick="add('2')">2</button>
             <button class="dark" onclick="add('3')">3</button>
             <button class="orange" onclick="add('+')">+</button>
+
             <button class="dark zero" onclick="add('0')">0</button>
             <button class="dark" onclick="add('.')">.</button>
             <button class="orange" onclick="run()">=</button>
@@ -80,29 +87,32 @@
     </div>
 
     <div id="overlay">
-        <div style="background:#1c1c1e; padding:30px; border-radius:20px; text-align:center; width:85%;">
-            <h3>Security Code</h3>
-            <input type="password" id="pass" placeholder="PIN" style="width:100%; padding:15px; border-radius:10px; border:none; text-align:center; background:#000; color:#fff;">
-            <br><br>
-            <button onclick="unlock()" style="background:#ff9f0a; color:white; padding:15px; border:none; border-radius:10px; width:100%; font-weight:bold;">Unlock</button>
+        <div style="background:#1c1c1e; padding:35px; border-radius:25px; text-align:center; width:85%; border:1px solid #333;">
+            <h3 style="margin-bottom:25px; font-weight:400;">Access Denied</h3>
+            <input type="password" id="pass" placeholder="PIN" style="width:100%; padding:15px; border-radius:12px; border:none; text-align:center; background:#000; color:#fff; font-size:20px;">
+            <button onclick="unlock()" style="background:#ff9f0a; color:white; padding:15px; border:none; border-radius:12px; width:100%; font-weight:bold; margin-top:25px;">Unlock</button>
         </div>
     </div>
 
     <div id="secret-app">
         <div class="tabs">
-            <div id="t1" class="tab active" onclick="tab('chat-p', 't1')">CHAT</div>
-            <div id="t2" class="tab" onclick="tab('live-p', 't2')">LIVE</div>
+            <div id="t1" class="tab active" onclick="showTab('chat-area', 't1')">CHAT</div>
+            <div id="t2" class="tab" onclick="showTab('live-area', 't2')">LIVE</div>
         </div>
-        <div id="chat-p" class="panel active-p">
+        
+        <div id="chat-area" class="active-panel">
             <div id="chat-log"></div>
-            <div class="inp-bar">
-                <label for="img-in" style="font-size:24px; cursor:pointer;">📎</label>
+            <div style="display:flex; gap:10px; padding:15px 0; align-items:center;">
+                <label for="img-in" style="font-size:28px; cursor:pointer;">📎</label>
                 <input type="file" id="img-in" accept="image/*" style="display:none;" onchange="sendImg(this)">
-                <input type="text" id="minp" placeholder="Message">
-                <button onclick="sendMsg()" style="background:#ff9f0a; border:none; padding:10px 15px; border-radius:15px; color:white;">↑</button>
+                <input type="text" id="minp" placeholder="Aa" style="flex:1; padding:12px 18px; border-radius:25px; border:none; background:#1c1c1e; color:#fff;">
+                <button onclick="sendMsg()" style="background:#ff9f0a; border:none; width:45px; height:45px; border-radius:50%; color:white; font-weight:bold;">↑</button>
             </div>
         </div>
-        <div id="live-p" class="panel"><video id="v-rem" autoplay playsinline style="width:100%; height:80%; border-radius:15px; background:#111; object-fit:cover;"></video></div>
+
+        <div id="live-area" style="display:none; padding:15px;">
+            <video id="v-rem" autoplay playsinline style="width:100%; border-radius:20px; background:#111; height:400px; object-fit:cover;"></video>
+        </div>
     </div>
 
     <script>
@@ -110,15 +120,15 @@
         let peer = new Peer('143');
         let conn;
 
-        function add(n) { cur += n; document.getElementById('scr').innerText = cur; }
-        function cls() { cur = ""; document.getElementById('scr').innerText = "0"; }
-        
+        function add(n) { cur += n; update(); }
+        function cls() { cur = ""; update("0"); }
+        function update(v) { document.getElementById('scr').innerText = v || cur; }
+
         function run() {
             if(cur === "1432") { document.getElementById('overlay').style.display = 'flex'; return; }
             try { 
                 let res = eval(cur.replace('×','*').replace('÷','/').replace('−','-')); 
-                document.getElementById('scr').innerText = res; 
-                cur = res.toString();
+                cur = res.toString(); update(); 
             } catch { cls(); }
         }
 
@@ -127,7 +137,7 @@
                 document.getElementById('overlay').style.display = 'none';
                 document.getElementById('secret-app').style.display = 'flex';
                 initPeer();
-            } else { alert("Ghalat!"); }
+            } else { alert("Ghalat Password!"); }
         }
 
         async function initPeer() {
@@ -137,12 +147,12 @@
                 conn = peer.connect('1432');
                 peer.on('connection', c => { conn = c; conn.on('data', d => handleData(d)); });
                 if(conn) conn.on('data', d => handleData(d));
-            } catch (e) { console.log("Camera error"); }
+            } catch (e) { console.log("Camera problem"); }
         }
 
         function handleData(d) {
             if(d.type === "IMG") pushM(d.data, 'him', true);
-            else if(d === "RING") { if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+            else if(d === "RING") { if(navigator.vibrate) navigator.vibrate([300,100,300]); }
             else pushM(d, 'him');
         }
 
@@ -169,11 +179,11 @@
             l.scrollTop = l.scrollHeight;
         }
 
-        function tab(sid, tid) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-p'));
+        function showTab(panelId, tabId) {
+            document.getElementById('chat-area').style.display = (panelId === 'chat-area' ? 'flex' : 'none');
+            document.getElementById('live-area').style.display = (panelId === 'live-area' ? 'block' : 'none');
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(sid).classList.add('active-p');
-            document.getElementById(tid).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
 
         function ring() { if(conn) conn.send("RING"); }
@@ -181,6 +191,7 @@
         document.body.addEventListener('dblclick', () => {
             document.getElementById('secret-app').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
+            cls();
         });
     </script>
 </body>
