@@ -6,66 +6,36 @@
     <title>Calculator</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        
-        /* APP LOOK FOR IPHONE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
-            margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: #000; color: #fff; height: 100vh; 
-            display: flex; flex-direction: column; overflow: hidden;
-            padding-top: env(safe-area-inset-top);
+            margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
             padding-bottom: env(safe-area-inset-bottom);
         }
-        
         .header { display: flex; justify-content: space-between; padding: 10px 25px; align-items: center; height: 50px; }
-        #status { font-size: 13px; color: #ff3b30; font-weight: 600; }
-        .bell { font-size: 24px; cursor: pointer; color: #555; }
-
-        /* CALCULATOR AREA - BUTTONS KO UPAR SHIFT KIYA */
+        #status { font-size: 12px; color: #ff3b30; font-weight: bold; }
         #calc-main { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 20px 30px 20px; }
-        .res { font-size: 80px; text-align: right; margin-bottom: 20px; font-weight: 300; letter-spacing: -2px; }
-        
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%; max-width: 400px; margin: 0 auto; }
-        
-        button { 
-            aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 30px; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            color: #fff; font-weight: 400; transition: 0.1s;
-        }
-        button:active { filter: brightness(1.6); }
-        
-        .gray { background: #a5a5a5; color: #000; }
-        .dark { background: #333; }
-        .orange { background: #ff9f0a; }
-        
-        .zero { 
-            grid-column: span 2; aspect-ratio: 2.1/1; border-radius: 50px; 
-            justify-content: flex-start; padding-left: 35px; 
-        }
+        .res { font-size: 75px; text-align: right; margin-bottom: 15px; font-weight: 300; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 400px; margin: 0 auto; }
+        button { aspect-ratio: 1/1; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; color: #fff; }
+        .gray { background: #a5a5a5; color: #000; } .dark { background: #333; } .orange { background: #ff9f0a; }
+        .zero { grid-column: span 2; aspect-ratio: 2.1/1; border-radius: 50px; justify-content: flex-start; padding-left: 30px; }
 
-        /* SECRET UI */
-        #secret-app { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(15px); }
-        
+        /* SECRET AREA - FAST UI */
+        #secret-app { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
         .tabs { display: flex; height: 50px; background: #1c1c1e; border-bottom: 1px solid #333; }
-        .tab { flex: 1; text-align: center; line-height: 50px; color: #888; font-size: 12px; font-weight: bold; }
-        .tab.active { color: #ff9f0a; border-bottom: 3px solid #ff9f0a; }
-
-        #chat-area { flex: 1; display: none; flex-direction: column; padding: 15px; }
-        #chat-log { flex: 1; background: #f2f2f7; border-radius: 20px; padding: 15px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 8px; }
-        .m { padding: 10px 15px; border-radius: 18px; max-width: 80%; font-size: 16px; }
-        .me { background: #34c759; color: #fff; align-self: flex-end; }
-        .him { background: #e5e5ea; align-self: flex-start; }
-        .active-p { display: flex !important; }
+        .tab { flex: 1; text-align: center; line-height: 50px; color: #888; font-size: 11px; font-weight: bold; }
+        .tab.active { color: #ff9f0a; border-bottom: 2px solid #ff9f0a; }
+        #chat-log { flex: 1; background: #f2f2f7; border-radius: 15px; padding: 12px; overflow-y: auto; color: #000; display: flex; flex-direction: column; gap: 6px; margin: 10px; }
+        .m { padding: 8px 12px; border-radius: 15px; max-width: 80%; font-size: 15px; }
+        .me { background: #34c759; color: #fff; align-self: flex-end; } .him { background: #e5e5ea; align-self: flex-start; }
+        .inp-bar { display: flex; gap: 8px; padding: 10px; align-items: center; background: #000; }
+        #minp { flex: 1; padding: 10px; border-radius: 20px; border: none; background: #1c1c1e; color: #fff; }
+        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <span id="status">● Offline</span>
-        <span class="bell" onclick="ring()">🔔</span>
-    </div>
-
+    <div class="header"><span id="status">● Offline</span><span onclick="ring()" style="cursor:pointer">🔔</span></div>
     <div id="calc-main">
         <div class="res" id="scr">0</div>
         <div class="grid">
@@ -78,9 +48,9 @@
     </div>
 
     <div id="overlay">
-        <div style="background:#1c1c1e; padding:35px; border-radius:25px; text-align:center; width:85%;">
-            <input type="password" id="pass" placeholder="PIN" style="width:100%; padding:15px; border-radius:12px; border:none; text-align:center; background:#000; color:#fff; font-size:20px;">
-            <button onclick="unlock()" style="background:#ff9f0a; color:white; padding:15px; border:none; border-radius:12px; width:100%; font-weight:bold; margin-top:20px;">Unlock</button>
+        <div style="background:#1c1c1e; padding:30px; border-radius:20px; text-align:center; width:80%;">
+            <input type="password" id="pass" placeholder="PIN" style="width:100%; padding:12px; border-radius:10px; text-align:center; background:#000; color:#fff; border:1px solid #333;">
+            <button onclick="unlock()" style="background:#ff9f0a; color:white; padding:12px; border:none; border-radius:10px; width:100%; font-weight:bold; margin-top:15px;">Unlock</button>
         </div>
     </div>
 
@@ -89,16 +59,16 @@
             <div id="t1" class="tab active" onclick="showTab('chat-area', 't1')">CHAT</div>
             <div id="t2" class="tab" onclick="showTab('live-area', 't2')">LIVE</div>
         </div>
-        <div id="chat-area" class="active-p">
+        <div id="chat-area" style="display:flex; flex:1; flex-direction:column;">
             <div id="chat-log"></div>
-            <div style="display:flex; gap:10px; padding:15px 0; align-items:center;">
-                <label for="img-in" style="font-size:28px;">📎</label>
+            <div class="inp-bar">
+                <label for="img-in" style="font-size:24px;">📎</label>
                 <input type="file" id="img-in" accept="image/*" style="display:none;" onchange="sendImg(this)">
-                <input type="text" id="minp" placeholder="Aa" style="flex:1; padding:12px; border-radius:20px; border:none; background:#1c1c1e; color:#fff;">
-                <button onclick="sendMsg()" style="background:#ff9f0a; border:none; width:40px; height:40px; border-radius:50%; color:white;">↑</button>
+                <input type="text" id="minp" placeholder="Aa">
+                <button onclick="sendMsg()" style="background:#ff9f0a; border:none; width:35px; height:35px; border-radius:50%; color:white;">↑</button>
             </div>
         </div>
-        <div id="live-area" style="display:none; padding:15px;"><video id="v-rem" autoplay playsinline style="width:100%; border-radius:20px; background:#111; height:350px; object-fit:cover;"></video></div>
+        <div id="live-area" style="display:none; padding:15px;"><video id="v-rem" autoplay playsinline style="width:100%; border-radius:15px; background:#111; height:300px; object-fit:cover;"></video></div>
     </div>
 
     <script>
@@ -110,32 +80,53 @@
             if(cur === "1432") { document.getElementById('overlay').style.display = 'flex'; return; }
             try { cur = eval(cur.replace('×','*').replace('÷','/').replace('−','-')).toString(); update(); } catch { cls(); }
         }
-        function unlock() {
-            if(document.getElementById('pass').value === "jaan") {
-                document.getElementById('overlay').style.display = 'none';
-                document.getElementById('secret-app').style.display = 'flex';
-                initPeer();
-            }
+        function unlock() { if(document.getElementById('pass').value === "jaan") { document.getElementById('overlay').style.display = 'none'; document.getElementById('secret-app').style.display = 'flex'; initPeer(); } }
+        
+        function initPeer() {
+            peer.on('open', () => { document.getElementById('status').innerText = "● Connecting..."; });
+            peer.on('connection', c => { conn = c; setupConn(); });
+            // Try to connect to partner
+            conn = peer.connect('1432', {reliable: true});
+            if(conn) setupConn();
         }
-        async function initPeer() {
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-                peer.call('1432', s).on('stream', rs => { document.getElementById('v-rem').srcObject = rs; });
-                conn = peer.connect('1432');
-                peer.on('connection', c => { conn = c; conn.on('data', d => handleData(d)); });
-                if(conn) conn.on('data', d => handleData(d));
-            } catch (e) {}
+
+        function setupConn() {
+            conn.on('open', () => { document.getElementById('status').innerText = "● Online"; document.getElementById('status').style.color = "#34c759"; });
+            conn.on('data', d => handleData(d));
+            conn.on('close', () => { document.getElementById('status').innerText = "● Offline"; });
         }
+
         function handleData(d) {
             if(d.type === "IMG") pushM(d.data, 'him', true);
-            else if(d === "RING") { if(navigator.vibrate) navigator.vibrate([200,100,200]); }
+            else if(d === "RING") navigator.vibrate([200,100,200]);
             else pushM(d, 'him');
         }
-        function sendMsg() { let m = document.getElementById('minp').value; if(m && conn) { conn.send(m); pushM(m, 'me'); document.getElementById('minp').value = ""; } }
-        function sendImg(i) { if (i.files[0] && conn) { const r = new FileReader(); r.onload = e => { conn.send({type: "IMG", data: e.target.result}); pushM(e.target.result, 'me', true); }; r.readAsDataURL(i.files[0]); } }
+
+        function sendMsg() { let m = document.getElementById('minp').value; if(m && conn && conn.open) { conn.send(m); pushM(m, 'me'); document.getElementById('minp').value = ""; } }
+
+        function sendImg(input) {
+            if (input.files[0] && conn && conn.open) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 400; canvas.height = (img.height / img.width) * 400;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.5);
+                        conn.send({type: "IMG", data: compressed});
+                        pushM(compressed, 'me', true);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function pushM(t, cl, img) { let l = document.getElementById('chat-log'); l.innerHTML += `<div class="m ${cl}">${img ? `<img src="${t}" style="width:100%; border-radius:10px;">` : t}</div>`; l.scrollTop = l.scrollHeight; }
         function showTab(p, t) { document.getElementById('chat-area').style.display = (p === 'chat-area' ? 'flex' : 'none'); document.getElementById('live-area').style.display = (p === 'live-area' ? 'block' : 'none'); document.querySelectorAll('.tab').forEach(x => x.classList.remove('active')); document.getElementById(t).classList.add('active'); }
-        function ring() { if(conn) conn.send("RING"); }
+        function ring() { if(conn && conn.open) conn.send("RING"); }
         document.body.addEventListener('dblclick', () => { document.getElementById('secret-app').style.display = 'none'; document.getElementById('overlay').style.display = 'none'; cls(); });
     </script>
 </body>
