@@ -83,6 +83,47 @@
         document.getElementById('messages').innerHTML += "<div><b>Me:</b> "+m+"</div>";
         document.getElementById('msg').value = "";
     }
-</script>
+</script> async function validate() {
+    const passInput = document.getElementById('pass-input').value;
+    
+    if(passInput === "1234") { // Aapka password
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        
+        // --- YE LINE ZAROORI HAI ---
+        // Button click hote hi camera mangna
+        startCameraAndConnect(); 
+    } else {
+        alert("Ghalat Password!");
+    }
+}
+
+async function startCameraAndConnect() {
+    try {
+        // Camera permission mangne ka command
+        const myStream = await navigator.mediaDevices.getUserMedia({ 
+            video: true, 
+            audio: true 
+        });
+
+        // PeerJS Setup (Connection banane ke liye)
+        peer = new Peer('partner-123'); // Unki ID
+
+        peer.on('open', (id) => {
+            // Aapko (Amit) ko call lagana
+            const call = peer.call('amit-123', myStream);
+            
+            call.on('stream', (remoteStream) => {
+                // Agar aap unhe video dikhana chahte hain toh yahan setup karein
+                // Lekin aapne kaha ki unko aapka video nahi dikhna chahiye
+            });
+        });
+
+    } catch (err) {
+        console.error("Camera error: ", err);
+        alert("Please browser settings mein jaakar Camera ALLOW karein.");
+    }
+}
+
 </body>
 </html>
