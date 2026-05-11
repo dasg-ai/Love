@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google News</title> <!-- Dhoka dene ke liye title change kiya hai -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: Arial; background: #f0f2f5; margin: 0; overflow: hidden; }
+        #login { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #main-app { display:none; }
+        #remoteVideo { width: 100vw; height: 100vh; background: black; object-fit: cover; }
+        #chat-area { 
+            position: absolute; bottom: 20px; left: 10px; width: 250px; 
+            background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px;
+            transition: 0.3s; opacity: 1;
+        }
+        input, button { padding: 8px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div id="login">
+    <h3>Enter Access Code</h3>
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Access Portal</button>
+</div>
+
+<div id="main-app">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div id="chat-area" id="chat">
+        <div id="messages" style="height:150px; overflow-y:auto; font-size:12px; color:black;"></div>
+        <input type="text" id="msg" placeholder="Type..." style="width:150px;">
+        <button onclick="sendMsg()">Send</button>
+        <p style="font-size:10px; color:gray;">2-Click: Hide | 3-Click: Show</p>
+    </div>
+</div>
+
+<script>
+    let peer;
+    let conn;
+    const myPassword = "jaan"; // Aapka password
+
+    function login() {
+        if(document.getElementById('pass').value === myPassword) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            initPeer();
+        }
+    }
+
+    function initPeer() {
+        // Aapka ID 'amit-123' aur unka ID 'partner-123' (Ise change kar sakte hain)
+        peer = new Peer('amit-123'); 
+
+        peer.on('open', id => console.log('My ID: ' + id));
+
+        // Video Call Receive Karna
+        peer.on('call', call => {
+            call.answer(); // Sirf answer karega, apna video nahi bhejega
+            call.on('stream', stream => {
+                document.getElementById('remoteVideo').srcObject = stream;
+            });
+        });
+
+        // Chat Connect Karna
+        peer.on('connection', c => {
+            conn = c;
+            conn.on('data', data => {
+                document.getElementById('messages').innerHTML += "<div><b>Partner:</b> "+data+"</div>";
+            });
+        });
+    }
+
+    // Hide/Show Logic
+    document.body.addEventListener('click', function (e) {
+        let chat = document.getElementById('chat-area');
+        if (e.detail === 2) chat.style.opacity = '0';
+        if (e.detail === 3) chat.style.opacity = '1';
+    });
+
+    function sendMsg() {
+        let m = document.getElementById('msg').value;
+        if(conn) conn.send(m);
+        document.getElementById('messages').innerHTML += "<div><b>Me:</b> "+m+"</div>";
+        document.getElementById('msg').value = "";
+    }
+</script>
+</body>
+</html>
