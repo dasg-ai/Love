@@ -3,152 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google News - Live Updates</title>
-    <!-- PeerJS Library for Video Connection -->
+    <title>Ludo Online Club</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; background: #fff; overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: white; overflow: hidden; }
         
-        /* 1. Login Screen (System Update look) */
-        #login-screen { position: fixed; inset: 0; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; text-align: center; }
-        .login-box { padding: 20px; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        /* 2. Fake News Page (Emergency Cover) */
-        #fake-news { display: none; padding: 20px; color: #333; height: 100vh; overflow-y: auto; background: white; }
-        .news-bar { background: #cc0000; color: white; padding: 10px; font-weight: bold; margin-bottom: 15px; }
+        /* Navbar */
+        .nav { background: #1f1f1f; display: flex; justify-content: space-around; padding: 12px 0; border-bottom: 2px solid #2ecc71; }
+        .nav-link { cursor: pointer; color: #aaa; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .nav-link.active { color: #2ecc71; border-bottom: 2px solid #2ecc71; }
 
-        /* 3. Real App Content */
-        #main-app { display: none; position: relative; width: 100%; height: 100vh; background: #000; }
-        #remoteVideo { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        /* Screens */
+        .page { display: none; height: calc(100vh - 50px); width: 100%; position: relative; text-align: center; }
+        .show { display: block; }
+
+        /* Ludo Screen */
+        #ludo-page { background: #1e8449; padding-top: 50px; }
+        .board { width: 280px; height: 280px; margin: auto; background: white; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; border: 5px solid #2c3e50; }
+        .dice { margin-top: 30px; padding: 15px 40px; background: #f39c12; border: none; border-radius: 50px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+
+        /* Live/Video Screen */
+        #live-page { background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #remoteVideo { width: 100%; height: 80%; background: #000; object-fit: cover; }
+        .setup-box { position: absolute; top: 20%; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px); }
         
-        /* Chat UI */
-        #chat-box { 
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 350px; background: rgba(0,0,0,0.8); 
-            padding: 15px; border-radius: 15px; color: white; transition: 0.3s; z-index: 500;
-        }
-        #messages { height: 120px; overflow-y: auto; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #444; text-align: left; }
-        .chat-input-area { display: flex; gap: 5px; }
-        input[type="text"] { flex: 1; padding: 8px; border-radius: 5px; border: none; }
-        .send-btn { padding: 8px 15px; border-radius: 5px; background: #28a745; color: white; border: none; cursor: pointer; }
+        /* Chat/News */
+        #news-page { background: #f4f4f4; color: #333; padding: 20px; }
+        #chat-logs { height: 60%; background: white; border: 1px solid #ddd; margin-bottom: 10px; overflow-y: auto; text-align: left; padding: 10px; }
+        
+        input { padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 70%; }
+        .btn { padding: 10px 20px; background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- SECTION 1: LOGIN -->
-    <div id="login-screen">
-        <div class="login-box">
-            <img src="https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" width="92" alt="Google">
-            <h3 style="color:#5f6368;">Sign in to continue</h3>
-            <input type="password" id="pass-input" placeholder="Enter PIN" style="padding:10px; width:80%; margin-bottom:10px; border:1px solid #ccc; border-radius:5px;">
-            <br>
-            <button onclick="startApp()" style="padding:10px 25px; background:#1a73e8; color:white; border:none; border-radius:5px; cursor:pointer;">Next</button>
+    <nav class="nav">
+        <div class="nav-link active" onclick="nav('ludo-page')">Ludo Game</div>
+        <div class="nav-link" onclick="nav('news-page')">News</div>
+        <div class="nav-link" onclick="nav('live-page')">Live</div>
+    </nav>
+
+    <!-- SCREEN 1: LUDO -->
+    <div id="ludo-page" class="page show">
+        <div class="board">
+            <div style="background:red"></div><div style="background:blue"></div>
+            <div style="background:green"></div><div style="background:yellow"></div>
         </div>
+        <button class="dice" onclick="roll()">🎲 Roll Dice</button>
+        <h2 id="res">0</h2>
     </div>
 
-    <!-- SECTION 2: FAKE NEWS (2-Clicks) -->
-    <div id="fake-news">
-        <div class="news-bar">BREAKING NEWS</div>
-        <h1>Heavy Rain Alert in South India</h1>
-        <p><b>Bangalore:</b> Authorities have advised caution due to unexpected weather changes. Public transport may be affected...</p>
-        <hr>
-        <h3>Stock Market Update</h3>
-        <p>Sensex jumps 400 points in early trade; Tech stocks lead the rally.</p>
-        <div style="background:#eee; height:200px; display:flex; align-items:center; justify-content:center; color:#999;">[News Image Placeholder]</div>
+    <!-- SCREEN 2: NEWS (CHAT) -->
+    <div id="news-page" class="page">
+        <div id="chat-logs"></div>
+        <input type="text" id="m-in" placeholder="Type secret...">
+        <button class="btn" onclick="sendMsg()">Send</button>
     </div>
 
-    <!-- SECTION 3: VIDEO & CHAT -->
-    <div id="main-app">
+    <!-- SCREEN 3: LIVE (ID SYSTEM) -->
+    <div id="live-page" class="page">
+        <div id="id-input-area" class="setup-box">
+            <h4>Security Check</h4>
+            <input type="text" id="partner-id" placeholder="Enter Connection ID">
+            <button class="btn" onclick="connectToPartner()" style="margin-top:10px;">Connect Live</button>
+        </div>
         <video id="remoteVideo" autoplay playsinline></video>
-        <div id="chat-box">
-            <div id="messages"><i>System: Connection Secure...</i></div>
-            <div class="chat-input-area">
-                <input type="text" id="msg-input" placeholder="Say something...">
-                <button class="send-btn" onclick="sendMsg()">Send</button>
-            </div>
-        </div>
     </div>
 
     <script>
-        const MY_PASS = "jaan"; // PASSWORD YAHAN CHANGE KAREIN
-        let peer;
+        let peer = new Peer(); // Auto-generated ID for her
         let conn;
+        let myStream;
 
-        async function startApp() {
-            const input = document.getElementById('pass-input').value;
-            if (input === MY_PASS) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                setupConnection();
-            } else {
-                alert("Access Denied");
+        // Navigation
+        function nav(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('show'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('show');
+            event.target.classList.add('active');
+        }
+
+        // Dice Logic
+        function roll() {
+            document.getElementById('res').innerText = Math.floor(Math.random() * 6) + 1;
+        }
+
+        // Live Connection Logic
+        async function connectToPartner() {
+            const targetId = document.getElementById('partner-id').value;
+            if(!targetId) return alert("ID likho pehle");
+
+            try {
+                // Camera Permission
+                myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                
+                // Hide ID input area after clicking
+                document.getElementById('id-input-area').style.display = 'none';
+
+                // Call the ID (Your ID: amit-123)
+                const call = peer.call(targetId, myStream);
+                
+                // Chat Connection
+                conn = peer.connect(targetId);
+                setupChat();
+
+                // If you send your video, it shows here
+                call.on('stream', rStream => {
+                    document.getElementById('remoteVideo').srcObject = rStream;
+                });
+
+            } catch (e) {
+                alert("Camera Access Denied!");
             }
         }
 
-        async function setupConnection() {
-            try {
-                // Camera access permission maangna
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                
-                // Peer ID 'partner-123' (Unke liye)
-                peer = new Peer('partner-123');
-
-                peer.on('open', id => {
-                    console.log("Connected with ID: " + id);
-                    // Amit (Aapko) call lagana
-                    const call = peer.call('amit-123', stream);
-                    
-                    // Unko aapka video NAHI dikhega (Hidden)
-                    call.on('stream', remoteStream => {
-                        // Agar aap unhe video dikhana chahte to yahan code aata
-                    });
-                });
-
-                // Chat receive karne ke liye
-                peer.on('connection', c => {
-                    conn = c;
-                    conn.on('data', data => {
-                        const msgDiv = document.getElementById('messages');
-                        msgDiv.innerHTML += `<div><b>Him:</b> ${data}</div>`;
-                        msgDiv.scrollTop = msgDiv.scrollHeight;
-                    });
-                });
-
-            } catch (err) {
-                alert("Camera allow karna zaroori hai tabhi kaam karega.");
-                console.error(err);
-            }
+        function setupChat() {
+            conn.on('data', data => {
+                document.getElementById('chat-logs').innerHTML += `<p style="color:blue"><b>Partner:</b> ${data}</p>`;
+            });
         }
 
         function sendMsg() {
-            const val = document.getElementById('msg-input').value;
-            if (val && conn) {
-                conn.send(val);
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML += `<div><b>Me:</b> ${val}</div>`;
-                document.getElementById('msg-input').value = "";
-                msgDiv.scrollTop = msgDiv.scrollHeight;
+            const msg = document.getElementById('m-in').value;
+            if(conn && msg) {
+                conn.send(msg);
+                document.getElementById('chat-logs').innerHTML += `<p><b>Me:</b> ${msg}</p>`;
+                document.getElementById('m-in').value = "";
             }
         }
 
-        // HIDDING LOGIC (Clicks)
-        document.body.addEventListener('click', function (e) {
-            const main = document.getElementById('main-app');
-            const fake = document.getElementById('fake-news');
-            const login = document.getElementById('login-screen');
-
-            if (e.detail === 2) { // Double Click -> Show Fake News
-                main.style.display = 'none';
-                fake.style.display = 'block';
-                login.style.display = 'none';
-            }
-            if (e.detail === 3) { // Triple Click -> Reset to Password
-                main.style.display = 'none';
-                fake.style.display = 'none';
-                login.style.display = 'flex';
-                document.getElementById('pass-input').value = "";
-                location.reload(); // Connection refresh karne ke liye
-            }
+        // Emergency Hide
+        document.body.addEventListener('dblclick', () => {
+            nav('ludo-page');
         });
     </script>
 </body>
